@@ -20,7 +20,7 @@ class binarySearchDB:
             index = self.search(value)
 
             # Call the insert helper method
-            self.insert_helper(index, value, 5, len(self.list))
+            self.insert_helper(index, value, len(self.list))
             print(self.list)
             
 
@@ -30,6 +30,9 @@ class binarySearchDB:
         if index >= range:
             raise ValueError("Value index should be less than the length range of the list")
         val = value['createdAt']
+
+        # Insert the value into the array 
+        self.list.insert(index, val)
 
 
 
