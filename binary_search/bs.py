@@ -1,9 +1,13 @@
+import uuid
+import datetime 
+from datetime import datetime, time
 class binarySearchDB:
     # Constructor method 
-    def __init__(self):
+    def __init__(self, id: str = str(uuid.uuid4())):
         # self.data = data 
-        self.list = [1, 10, 20, 220, 2200]
+        self.list = []
         self.dict = dict() 
+        self.id = id
 
     # Method to get the length of the database 
     def length(self):
@@ -18,12 +22,15 @@ class binarySearchDB:
         if self.length() > 0:
             # Get the nearest index to the right 
             index = self.search(value)
-
-            # Call the insert helper method
-            self.insert_helper(index, value, len(self.list))
-            print(self.list)
-            
-
+            # If index is greater than the length of the array
+            if index >= len(self.list):
+                self.list.append(value['createdAt'])
+            else:
+                # Call the insert helper method
+                self.insert_helper(index, value, len(self.list))
+        else:
+            self.list.append(value['createdAt'])
+            self.dict[self.id] = self.list
             
     # Helper method to insert value at a specific index 
     def insert_helper(self, index: int, value: dict , range: int):
@@ -34,6 +41,8 @@ class binarySearchDB:
         # Insert the value into the array 
         self.list.insert(index, val)
 
+        # Update the dictionary values 
+        self.dict[self.id] = self.list 
 
 
     # Method to get the length of the list 
@@ -63,11 +72,30 @@ class binarySearchDB:
         return low 
 
 
-X = binarySearchDB()
 Y = binarySearchDB()
-# X.insert()
-Y.insert({'createdAt': 19})
-
+# message = {
+#     'createdAt': datetime.now().time(),
+#     'messageID': str(uuid.uuid4()),
+#     'messageContent': 'Hello world!!'
+# }
+Y.insert({
+    'createdAt': datetime.now().time(),
+    'messageID': str(uuid.uuid4()),
+    'messageContent': 'Hello world!!'
+})
+print(Y.id)
+print(Y.dict)
+Y.insert({
+    'createdAt': datetime.now().time(),
+    'messageID': str(uuid.uuid4()),
+    'messageContent': 'Hello world 2!!'
+})
+Y.insert({
+    'createdAt': datetime.now().time(),
+    'messageID': str(uuid.uuid4()),
+    'messageContent': 'Hello world 3!!'
+})
+print(Y.dict)
     
 
 
