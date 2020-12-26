@@ -44,7 +44,7 @@ class binarySearchDB:
                     self.dict[value['messageID']] = value['messageContent']
                 else:
                     # Call the insert helper method
-                    self.insert_helper(index, value, list_values, self.length())
+                    self.insert_helper(index, list_values, self.length())
                     self.dict[value['messageID']] = value['messageContent']
             else:
                 self.list.append(list_values)
@@ -53,14 +53,14 @@ class binarySearchDB:
             raise Exception(f'Duplicate entry! Entry already exist with message ID: {value}')
             
     # Helper method to insert value at a specific index 
-    def insert_helper(self, index: int, value: dict, list_values: dict , range: int):
+    def insert_helper(self, index: int, list_values: dict , range: int):
         if index >= range:
             raise ValueError("Value index should be less than the length range of the list")
         # Insert the value into the array 
         self.list.insert(index, list_values)
 
         # Update the dictionary values 
-        self.dict[value['messageID']] = value['messageContent']
+        # self.dict[value['messageID']] = value['messageContent']
 
     # Method to get the length of the list 
     def length(self):
@@ -85,43 +85,47 @@ class binarySearchDB:
             raise Exception(f'Information not present in the database with the message ID: {id}')
 
     # Method to update an entry using message ID 
-    def update(self, messageID: str, messageContent: str = None, newMessageID: str = None, createdAt: str = None) -> None:
-        # Array for search 
-        array = [i["messageID"] for i in self.list if "messageID" in i]
-        # Check if the message entry exists or not 
-        index = self.checkPos(array, messageID, "messageID", 0, self.length() - 1)
-        print('INDEX', index)
-        if index != -1:
-            # Update new message content if any 
-            if messageContent is not None:
-                self.dict[messageID] = messageContent 
-            
-            # Update the array with message id, and update position accordingly 
-            if newMessageID is not None:
-                # Delete the current value at the index 
-                self.list.pop(index)
-                # Find the nearest index to insert 
-                newobject = {
-                    "createdAt": createdAt,
-                    "messageID": newMessageID
-                }
-                checkStr = "createdAt" 
-                newIndex = self.search_nearest(newObject, checkStr)
-                # If index is greater than the length of the array
-                if newIndex >= self.length():
-                    self.list.append(newObject)
-                    self.dict[newObject['messageID']] = newObject['messageContent']
-                else:
-                    # Call the insert helper method
-                    updateObject = {
-                    "createdAt": createdAt,
-                    "messageID": newMessageID,
-                    "messageContent": messageContent
-                }
-                    self.insert_helper(newIndex, newObject, updateObject, self.length())
-                    self.dict[newObject['messageID']] = newObject['messageContent']
+    # def update(self, messageID: str, messageContent: str = None, newMessageID: str = None, createdAt: str = None) -> None
+    def update(self, value: dict) -> None:
+        messageID = value['messageID']
+        messageContent = value['messageContent'] or None 
+        createdAt = value['createdAt']
+        # Check if the list is empty or not 
+        if self.length() > 0:
+            # Array for search 
+            array = [i["messageID"] for i in self.list if "messageID" in i]
+            # Check if the message entry exists or not 
+            index = self.checkPos(array, messageID, "messageID", 0, self.length() - 1)
+            print('INDEX', index)
+            if index != -1:
+                # Update new message content if any 
+                if messageContent is not None:
+                    self.dict[messageID] = messageContent 
+            else:
+                # Insert into the database as a new entry 
+                if messageID is not None:
+                    # Find the nearest index to insert 
+                    newObject = {
+                        "createdAt": createdAt,
+                        "messageID": messageID,
+                    }
+                    checkStr = "createdAt" 
+                    newIndex = self.search_nearest(newObject, checkStr)
+                    # If index is greater than the length of the array
+                    if newIndex >= self.length():
+                        self.list.append(newObject)
+                        self.dict[messageID] = messageContent
+                    else:
+                        # Call the insert helper method
+                        self.insert_helper(newIndex, newObject, self.length())
+                        self.dict[messageID] = messageContent
         else:
-            raise  Exception('Information not present in the database with the message ID: %s' %messageID)
+            list_values = {
+                "createdAt": createdAt,
+                "messageContent": messageContent
+            }
+            self.list.append(list_values)
+            self.dict[messageID] = messageContent
 
     # Clear the database 
     def clear(self):
@@ -166,6 +170,50 @@ class binarySearchDB:
                 low = mid + 1 
         return low 
 
+    """
+    Fetch Paginated content before or after using the parameters 
+    count: 10 as default
+    pagination_type: "before" as default 
+    """
+    def paginated(self, count: int = None, pagination_type: str = None, chats_received: int = 0) -> dict:
+        array_length = self.length()
+        check_array = list()
+        final_array = list()
+        counter = 0
+        # For pagination before or default 
+        if pagination_type is None or pagination_type == "before":
+            # Check if count is more than the chats left to be taken 
+            chats_left = array_length - (chats_received + count)
+            if chats_left < 0:
+                count = count - abs(chats_left)
+            # Get the list items for the last N chats 
+            check_array = self.list[-count:]
+            for val in check_array:
+                temp_data = {
+                    "messageID": val["messageID"],
+                    "createdAt": val["createdAt"],
+                    "messageContent": self.dict[val["messageID"]]
+                }
+                # Append to the final array such that the final array is in descending order for the last N messages
+                final_array.insert(0, temp_data)
+            return final_array
+        # For pagination after 
+        if pagination_type == "after":
+            # Check if count is more than the chats left to be taken 
+            chats_left = array_length - (chats_received + count)
+            if chats_left < 0:
+                count = count - abs(chats_left)
+            # Get the list items for the last N chats 
+            check_array = self.list[chats_received:chats_received + count]
+            for val in check_array:
+                temp_data = {
+                    "messageID": val["messageID"],
+                    "createdAt": val["createdAt"],
+                    "messageContent": self.dict[val["messageID"]]
+                }
+                # Append to the final array such that the final array is in descending order for the last N messages
+                final_array.insert(0, temp_data)
+            return final_array
 
 Y = binarySearchDB()
 x = datetime.now().time()
@@ -198,11 +246,15 @@ print(Y.all())
 print('\n\n')
 # Y.deleteByMessageID('akaka113')
 start_time = time.time()
-Y.update("akaka113", "Namaste beta!!")
+new = {
+    'createdAt': datetime.now().time(),
+    'messageID': 'akaka113',
+    'messageContent': 'Hitler baba!!'
+}
+Y.update(new)
 print("--- %s seconds ---" % (time.time() - start_time))
 print(Y.all())
 print(Y.dict)
-
-
-
+print('\n\n\n')
+print(Y.paginated(3, "after", 4))
 
